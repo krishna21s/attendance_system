@@ -9,14 +9,14 @@ function App() {
 
   return (
     <>
-      <div className="container-fluid d-flex justify-content-center">
+     
         <div className="app">
           <Routes>
             <Route path="/presenties" element={<Presenties />} />
             <Route path="/login" element={<Login/>} />
           </Routes>
         </div>
-      </div>
+      
     </>
   )
 }
