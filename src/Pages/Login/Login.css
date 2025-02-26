@@ -1,7 +1,6 @@
-.login-main{
-    background-image: url('https://gmrit.edu.in/images/blocks/Landing.png');
-    height: 100vh;
-    width: 100%;
-    background-size: cover;
-    background-repeat: no-repeat;
+.login-inputs{
+    outline: 0;
+}
+.login-inputs:focus{
+    border: 2px solid rgb(97, 97, 97) !important;
 }
