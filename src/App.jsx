@@ -10,7 +10,6 @@ function App() {
 
   return (
     <>
-     
         <div className="app">
           <Routes>
             <Route path="/presenties" element={<Presenties />} />
@@ -18,7 +17,6 @@ function App() {
             <Route path="/register" element={<Student_Reg/>} />
           </Routes>
         </div>
-      
     </>
   )
 }
