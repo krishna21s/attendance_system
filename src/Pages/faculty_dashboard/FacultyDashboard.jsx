@@ -4,16 +4,16 @@ import "bootstrap/dist/css/bootstrap.min.css"; // Bootstrap for styling
 const FacultyDashboard = () => {
   const [faculty, setFaculty] = useState(null);
   const [timetable, setTimetable] = useState([]);
-  const [error, setError] = useState(null);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null);
-  const [extraClassTime, setExtraClassTime] = useState("");
+  const [error, setError] = useState(null);
 
   // Fetch faculty details & assigned timetable
   useEffect(() => {
     const fetchFacultyData = async () => {
       try {
-        const response = await fetch("http://localhost/hackhub/faculty_timetable.php");
+        const response = await fetch("http://localhost/hackhub/faculty_timetable.php?faculty_id=2");
         const data = await response.json();
         if (data.error) throw new Error(data.error);
         setFaculty(data.faculty);
@@ -27,18 +27,32 @@ const FacultyDashboard = () => {
     fetchFacultyData();
   }, []);
 
+  // Fetch Attendance Records for Selected Subject
+  const fetchAttendance = async (subjectId, sectionId) => {
+    try {
+      const response = await fetch(`http://localhost/hackhub/fetch_attendance.php?subject_id=${subjectId}&section_id=${sectionId}`);
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      setAttendanceRecords(data.attendance);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load attendance records.");
+    }
+  };
+
   // Mark Attendance for a Selected Period
   const markAttendance = async (subjectId, sectionId) => {
     try {
       const response = await fetch("http://localhost/hackhub/mark_attendance.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject_id: subjectId, section_id: sectionId }),
+        body: JSON.stringify({ faculty_id: faculty.faculty_id, subject_id: subjectId, section_id: sectionId }),
       });
 
       const result = await response.json();
       if (result.success) {
         alert("Attendance marked successfully!");
+        fetchAttendance(subjectId, sectionId);
       } else {
         alert("Failed to mark attendance.");
       }
@@ -47,33 +61,24 @@ const FacultyDashboard = () => {
     }
   };
 
-  // Schedule Extra Class
-  const scheduleExtraClass = async () => {
-    if (!selectedSubject || !selectedSection || !extraClassTime) {
-      alert("Please select a subject, section, and time.");
-      return;
-    }
-
+  // Update Attendance Manually
+  const updateAttendance = async (attendanceId, status) => {
     try {
-      const response = await fetch("http://localhost/hackhub/schedule_extra_class.php", {
+      const response = await fetch("http://localhost/hackhub/update_attendance.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          faculty_id: faculty.faculty_id,
-          subject_id: selectedSubject,
-          section_id: selectedSection,
-          extra_time: extraClassTime,
-        }),
+        body: JSON.stringify({ attendance_id: attendanceId, status }),
       });
 
       const result = await response.json();
       if (result.success) {
-        alert("Extra class scheduled successfully!");
+        alert("Attendance updated!");
+        fetchAttendance(selectedSubject, selectedSection);
       } else {
-        alert("Failed to schedule extra class.");
+        alert("Failed to update attendance.");
       }
     } catch (error) {
-      console.error("Error scheduling extra class:", error);
+      console.error("Error updating attendance:", error);
     }
   };
 
@@ -83,7 +88,6 @@ const FacultyDashboard = () => {
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* Faculty Info */}
       {faculty && (
         <div className="card p-4 mb-4 shadow" style={{ backgroundColor: "#ADB4BF" }}>
           <h3 className="text-white">Welcome, {faculty.name}</h3>
@@ -113,11 +117,11 @@ const FacultyDashboard = () => {
                   <td>{entry.subject_name}</td>
                   <td>Section {entry.section_name}</td>
                   <td>
-                    <button
-                      className="btn btn-success btn-sm"
-                      onClick={() => markAttendance(entry.subject_id, entry.section_id)}
-                    >
+                    <button className="btn btn-success btn-sm" onClick={() => markAttendance(entry.subject_id, entry.section_id)}>
                       Mark Attendance
+                    </button>
+                    <button className="btn btn-info btn-sm ml-2" onClick={() => fetchAttendance(entry.subject_id, entry.section_id)}>
+                      View Attendance
                     </button>
                   </td>
                 </tr>
@@ -129,42 +133,39 @@ const FacultyDashboard = () => {
         )}
       </div>
 
-      {/* Schedule Extra Class */}
-      <div className="card p-4 shadow mt-4">
-        <h2 className="text-dark">Schedule Extra Class</h2>
-        <div className="form-group">
-          <label>Select Subject:</label>
-          <select className="form-control" onChange={(e) => setSelectedSubject(e.target.value)}>
-            <option value="">-- Select Subject --</option>
-            {timetable.map((entry) => (
-              <option key={entry.subject_id} value={entry.subject_id}>{entry.subject_name}</option>
-            ))}
-          </select>
+      {/* Attendance Records */}
+      {attendanceRecords.length > 0 && (
+        <div className="card p-4 shadow mt-4">
+          <h2 className="text-dark">Attendance Records</h2>
+          <table className="table table-bordered">
+            <thead className="thead-dark">
+              <tr>
+                <th>JNTU No</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {attendanceRecords.map((record) => (
+                <tr key={record.attendance_id}>
+                  <td>{record.jntu_no}</td>
+                  <td>{record.name}</td>
+                  <td>{record.status}</td>
+                  <td>
+                    <button className="btn btn-warning btn-sm" onClick={() => updateAttendance(record.attendance_id, "Present")}>
+                      Mark Present
+                    </button>
+                    <button className="btn btn-danger btn-sm ml-2" onClick={() => updateAttendance(record.attendance_id, "Absent")}>
+                      Mark Absent
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-
-        <div className="form-group">
-          <label>Select Section:</label>
-          <select className="form-control" onChange={(e) => setSelectedSection(e.target.value)}>
-            <option value="">-- Select Section --</option>
-            {timetable.map((entry) => (
-              <option key={entry.section_id} value={entry.section_id}>Section {entry.section_name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label>Extra Class Time:</label>
-          <input
-            type="time"
-            className="form-control"
-            onChange={(e) => setExtraClassTime(e.target.value)}
-          />
-        </div>
-
-        <button className="btn btn-primary mt-3" onClick={scheduleExtraClass}>
-          Schedule Extra Class
-        </button>
-      </div>
+      )}
     </div>
   );
 };
