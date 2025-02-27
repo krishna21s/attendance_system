@@ -22,6 +22,7 @@ const FacultyRegister = () => {
   const fetchSubjects = async () => {
     try {
       const response = await fetch("http://localhost/hackhub/get_subjects.php");
+      console.log(response)
       const data = await response.json();
       if (data.error) throw new Error(data.error);
       setSubjects(data.subjects);
