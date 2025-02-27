@@ -1,133 +1,123 @@
 import { useState, useEffect } from "react";
-import "bootstrap/dist/css/bootstrap.min.css"; // Import Bootstrap
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-function Presenties() {
-  const [recognizedFaces, setRecognizedFaces] = useState([]); // Stores recognized faces
-  const [presentiesList, setPresentiesList] = useState({}); // Stores attendance
-  const [error, setError] = useState(null); // Error handling
+const Presenties = () => {
+  const { subjectId, sectionId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const subjectInfo = location.state?.subjectInfo || {};
+
+  const [recognizedStudents, setRecognizedStudents] = useState([]); // 🔹 Live attendance (left table)
+  const [attendanceRecords, setAttendanceRecords] = useState({}); // 🔹 Marked attendance (right table)
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchFaces = async () => {
+    const fetchRecognizedFaces = async () => {
       try {
-        const response = await fetch("http://localhost/hackhub/face_recognition.php");
-        if (!response.ok) {
-          throw new Error(`HTTP Error: ${response.status}`);
-        }
+        const response = await fetch("http://localhost/hackhub/get_live_attendance.php");
+        if (!response.ok) throw new Error("Failed to recognize faces.");
 
         const data = await response.json();
-        if (!data.faces || !Array.isArray(data.faces)) {
-          setRecognizedFaces([]);
-          return;
-        }
+        console.log("Live Attendance:", data);
 
-        setRecognizedFaces(data.faces);
+        if (data.faces) {
+          setRecognizedStudents(data.faces); // 🔹 Live data (without storing)
 
-        // Add new recognized faces to presentiesList (if not already marked)
-        setPresentiesList((prevList) => {
-          const updatedList = { ...prevList };
-          data.faces.forEach(({ jntu_no, name }) => {
-            if (!updatedList[jntu_no]) {
-              updatedList[jntu_no] = { name, status: "Present" }; // Default status when recognized
-            }
+          // ✅ Auto-mark Present (only once per student)
+          setAttendanceRecords(prevRecords => {
+            const updatedRecords = { ...prevRecords };
+            data.faces.forEach(student => {
+              if (!(student.jntu_no in updatedRecords)) {
+                updatedRecords[student.jntu_no] = "Present"; // Auto mark as Present
+              }
+            });
+            return updatedRecords;
           });
-          return updatedList;
-        });
-
-        setError(null); // Clear any previous error
+        }
       } catch (err) {
-        console.error("Error fetching recognized faces:", err);
-        setError("Failed to load recognized faces. Please check the server.");
+        setError(err.message);
       }
     };
 
-    // Auto-fetch every 2 seconds
-    const interval = setInterval(fetchFaces, 2000);
+    const interval = setInterval(fetchRecognizedFaces, 5000); // 🔄 Refresh every 5 seconds
     return () => clearInterval(interval);
   }, []);
 
-  // Handle Manual Attendance Change
-  const updateAttendance = (jntu_no, status) => {
-    setPresentiesList((prevList) => ({
-      ...prevList,
-      [jntu_no]: { ...prevList[jntu_no], status },
+  // ✅ Manually edit attendance
+  const handleStatusChange = (jntu_no, newStatus) => {
+    setAttendanceRecords(prevRecords => ({
+      ...prevRecords,
+      [jntu_no]: newStatus
     }));
   };
 
+  // ✅ Finish & send attendance data to StudentAttendance.jsx
+  const finishAttendance = () => {
+    console.log("Final Attendance:", attendanceRecords);
+    navigate(`/attendance/${subjectId}/${sectionId}`, { state: { attendanceRecords } });
+  };
+
   return (
-    <div className="container mt-5">
-      <h1 className="mb-4 text-primary text-center">Live Face Recognition Attendance</h1>
+    <div className="container mt-3">
+      <nav className="navbar navbar-light bg-primary text-white p-3">
+        <span className="navbar-brand text-white">GMRIT</span>
+        <span className="navbar-text text-light">
+          {subjectInfo.subjectName} - {subjectInfo.branch}, Sem {subjectInfo.semester}, Section {subjectInfo.section}
+        </span>
+      </nav>
 
-      {error && <div className="alert alert-danger text-center">{error}</div>}
+      {error && <div className="alert alert-danger mt-3">{error}</div>}
 
-      <div className="row">
-        {/* Recognized Faces Table */}
-        <div className="col-md-12">
-          <div className="card shadow p-4 mb-4">
-            <h2 className="mb-3 text-secondary">Recognized Students</h2>
-            {recognizedFaces.length > 0 ? (
-              <table className="table table-striped table-bordered">
+      <div className="row mt-3">
+        {/* ✅ Left: Live Recognized Faces (Does NOT store) */}
+        <div className="col-md-6">
+          <div className="card p-4">
+            <h2 className="text-dark">Live Attendance</h2>
+            {recognizedStudents.length > 0 ? (
+              <table className="table table-bordered">
                 <thead className="thead-dark">
                   <tr>
-                    <th>#</th>
                     <th>JNTU No</th>
                     <th>Name</th>
-                    <th>Year</th>
-                    <th>Semester</th>
-                    <th>Branch ID</th>
-                    <th>Section ID</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recognizedFaces.map(({ jntu_no, name, year, semester, branch_id, section_id }, index) => (
-                    <tr key={jntu_no}>
-                      <td>{index + 1}</td>
-                      <td className="text-info font-weight-bold">{jntu_no}</td>
-                      <td className="text-success font-weight-bold">{name}</td>
-                      <td>{year}</td>
-                      <td>{semester}</td>
-                      <td>{branch_id}</td>
-                      <td>{section_id}</td>
+                  {recognizedStudents.map((student, index) => (
+                    <tr key={index}>
+                      <td>{student.jntu_no}</td>
+                      <td>{student.name}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             ) : (
-              <p className="text-danger">No Faces Detected</p>
+              <p className="text-danger">No students detected.</p>
             )}
           </div>
         </div>
 
-        {/* Attendance Table */}
-        <div className="col-md-12">
-          <div className="card shadow p-4">
-            <h2 className="mb-3 text-secondary">Attendance</h2>
-            {Object.keys(presentiesList).length > 0 ? (
-              <table className="table table-striped table-bordered">
+        {/* ✅ Right: Marked Attendance (Stores Only Marked) */}
+        <div className="col-md-6">
+          <div className="card p-4">
+            <h2 className="text-dark">Mark Attendance</h2>
+            {Object.keys(attendanceRecords).length > 0 ? (
+              <table className="table table-bordered">
                 <thead className="thead-dark">
                   <tr>
-                    <th>#</th>
                     <th>JNTU No</th>
-                    <th>Name</th>
                     <th>Status</th>
-                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(presentiesList).map(([jntu_no, { name, status }], index) => (
-                    <tr key={jntu_no}>
-                      <td>{index + 1}</td>
-                      <td className="text-info font-weight-bold">{jntu_no}</td>
-                      <td className="font-weight-bold">{name}</td>
-                      <td>
-                        <span className={`badge  bg-${status === "Present" ? "success" : status === "Absent" ? "danger" : "warning"}`}>
-                          {status}
-                        </span>
-                      </td>
+                  {Object.entries(attendanceRecords).map(([jntu_no, status], index) => (
+                    <tr key={index}>
+                      <td>{jntu_no}</td>
                       <td>
                         <select
                           className="form-control"
                           value={status}
-                          onChange={(e) => updateAttendance(jntu_no, e.target.value)}
+                          onChange={(e) => handleStatusChange(jntu_no, e.target.value)}
                         >
                           <option value="Present">Present</option>
                           <option value="Absent">Absent</option>
@@ -139,13 +129,17 @@ function Presenties() {
                 </tbody>
               </table>
             ) : (
-              <p className="text-danger">No Students Marked Present Yet</p>
+              <p className="text-danger">No attendance records yet.</p>
             )}
           </div>
         </div>
       </div>
+
+      <button className="btn btn-success mt-3" onClick={finishAttendance}>
+        Finish Attendance
+      </button>
     </div>
   );
-}
+};
 
 export default Presenties;

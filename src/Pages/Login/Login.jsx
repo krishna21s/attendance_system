@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -20,34 +20,41 @@ const Login = () => {
         body: JSON.stringify({ userType, identifier, password }),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Store user ID in localStorage
-        localStorage.setItem("userType", userType);
-        if (userType === "student") {
-          localStorage.setItem("jntu_no", data.jntu_no);
-          navigate("/student-dashboard");
-        } else {
-          localStorage.setItem("faculty_id", data.faculty_id);
-          navigate("/faculty-dashboard");
-        }
-      } else {
-        setError(data.error);
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
       }
-    } catch (error) {
-      setError("Login failed. Please try again.");
+
+      const text = await response.text();
+      console.log("API Response:", text);
+
+      const data = JSON.parse(text);
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // ✅ Navigate and Pass Data as State
+      if (userType === "student") {
+        navigate("/student-dashboard", { state: { jntu_no: data.identifier, userType } });
+      } else {
+        navigate("/faculty-dashboard", { state: { faculty_id: data.identifier, userType } });
+      }
+    } catch (err) {
+      console.error("Login Error:", err.message);
+      setError(err.message);
     }
   };
 
   return (
-    <div className="login-main d-flex flex-column flex-md-row align-items-center justify-content-center vh-100" style={{
-      backgroundImage: "url(https://gmrit.edu.in/images/blocks/Landing.png)",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundBlendMode: "darken",
-      backgroundColor: "rgba(0, 0, 0, 0.6)"
-    }}>
+    <div
+      className="login-main d-flex flex-column flex-md-row align-items-center justify-content-center vh-100"
+      style={{
+        backgroundImage: "url(https://gmrit.edu.in/images/blocks/Landing.png)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundBlendMode: "darken",
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
+      }}
+    >
       <div className="d-none d-md-block w-50 text-center text-light p-4">
         <h1 className="fw-bold text-shadow-lg">Welcome to GMRIT</h1>
         <h3 className="fw-light text-shadow-lg">Face Recognition Attendance System</h3>
@@ -93,7 +100,9 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <button type="submit" className="w-100 btn btn-primary" style={{ fontSize: "1rem" }}>Login</button>
+            <button type="submit" className="w-100 btn btn-primary" style={{ fontSize: "1rem" }}>
+              Login
+            </button>
           </form>
         </div>
       </div>
