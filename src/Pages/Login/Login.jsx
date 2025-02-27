@@ -41,8 +41,8 @@ const Login = () => {
   };
 
   return (
-    <div className="login-main d-flex flex-column flex-md-row align-items-center justify-content-center vh-100" style={{ 
-      backgroundImage: "url(https://gmrit.edu.in/images/blocks/Landing.png)", 
+    <div className="login-main d-flex flex-column flex-md-row align-items-center justify-content-center vh-100" style={{
+      backgroundImage: "url(https://gmrit.edu.in/images/blocks/Landing.png)",
       backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundBlendMode: "darken",
@@ -58,15 +58,15 @@ const Login = () => {
             <img src="https://image3.mouthshut.com/images/imagesp/925718446s.png" alt="" style={{ width: "130px", marginBottom: "10px" }} />
           </div>
           <div className="d-flex justify-content-between gap-3 w-100 py-3">
-            <div 
-              className={`w-100 text-center rounded p-2 text-light ${userType === "student" ? "bg-dark" : "bg-secondary"}`} 
+            <div
+              className={`w-100 text-center rounded p-2 text-light ${userType === "student" ? "bg-dark" : "bg-secondary"}`}
               style={{ fontSize: "1rem", cursor: "pointer" }}
               onClick={() => setUserType("student")}
             >
               STUDENT
             </div>
-            <div 
-              className={`w-100 text-center rounded p-2 text-light ${userType === "faculty" ? "bg-dark" : "bg-secondary"}`} 
+            <div
+              className={`w-100 text-center rounded p-2 text-light ${userType === "faculty" ? "bg-dark" : "bg-secondary"}`}
               style={{ fontSize: "1rem", cursor: "pointer" }}
               onClick={() => setUserType("faculty")}
             >
@@ -75,20 +75,20 @@ const Login = () => {
           </div>
           {error && <div className="alert alert-danger">{error}</div>}
           <form className="d-flex flex-column" onSubmit={handleLogin}>
-            <input 
-              type="text" 
-              name="identifier" 
-              placeholder={userType === "student" ? "Enter JNTU Number" : "Enter Faculty ID"} 
-              className="w-100 login-inputs mb-2 p-2 rounded border" 
+            <input
+              type="text"
+              name="identifier"
+              placeholder={userType === "student" ? "Enter JNTU Number" : "Enter Faculty ID"}
+              className="w-100 login-inputs mb-2 p-2 rounded border"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               required
             />
-            <input 
-              type="password" 
-              name="password" 
-              placeholder="Enter password" 
-              className="w-100 login-inputs mb-2 p-2 rounded border" 
+            <input
+              type="password"
+              name="password"
+              placeholder="Enter password"
+              className="w-100 login-inputs mb-2 p-2 rounded border"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
