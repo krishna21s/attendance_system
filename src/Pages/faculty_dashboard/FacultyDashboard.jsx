@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const FacultyDashboard = () => {
@@ -7,13 +7,16 @@ const FacultyDashboard = () => {
   const [timetable, setTimetable] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // ✅ Retrieve faculty_id from localStorage
-  const facultyId = localStorage.getItem("faculty_id");
+  // ✅ Retrieve faculty_id from state (passed from Login.jsx)
+  const facultyId = location.state?.faculty_id;
+  console.log("Retrieved Faculty ID:", facultyId); // ✅ Debug log
 
   useEffect(() => {
     if (!facultyId) {
-      navigate("/login");
+      console.error("Faculty ID missing, redirecting to login...");
+      navigate("/");
       return;
     }
 
@@ -26,24 +29,19 @@ const FacultyDashboard = () => {
         }
 
         const text = await response.text();
-        console.log(text);
+        console.log("API Response:", text);
 
-        try {
-          const data = JSON.parse(text);
-          if (data.error) {
-            throw new Error(data.error);
-          }
-
-          // ✅ Ensure faculty details are set correctly
-          setFaculty({
-            name: data.faculty_name || "Unknown",
-            branch: data.faculty_branch || "N/A",
-          });
-
-          setTimetable(data.timetable);
-        } catch (jsonError) {
-          throw new Error("Invalid JSON response from server");
+        const data = JSON.parse(text);
+        if (data.error) {
+          throw new Error(data.error);
         }
+
+        setFaculty({
+          name: data.faculty_name || "Unknown",
+          branch: data.faculty_branch || "N/A",
+        });
+
+        setTimetable(data.timetable);
       } catch (err) {
         setError(`Failed to load faculty data: ${err.message}`);
       }
@@ -96,7 +94,9 @@ const FacultyDashboard = () => {
                     {/* ✅ Open Button - Navigate to StudentAttendance */}
                     <button
                       className="btn btn-primary btn-sm"
-                      onClick={() => navigate(`/attendance/${entry.subject_id}/${entry.section_id}`)}
+                      onClick={() => navigate(`/attendance/${entry.subject_id}/${entry.section_id}`, {
+                        state: { facultyId, subjectName: entry.subject_name, semester: entry.semester, branch: entry.branch_name, section: entry.section_name }
+                      })}
                     >
                       Open
                     </button>
