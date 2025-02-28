@@ -87,13 +87,28 @@ const StudentAttendance = () => {
             {subjectInfo.subjectName} - {subjectInfo.branch}, Sem {subjectInfo.semester}, Section {subjectInfo.section}
           </span>
         )}
+        <div>
+
+        <button
+          className="btn btn-light mx-2"
+          onClick={() => navigate('/reports')}
+        >
+          Mails
+        </button>
+        <button
+          className="btn btn-light mx-2"
+          onClick={() => navigate('/reports')}
+        >
+        Reports
+        </button>
         {/* ✅ Mark Attendance Button */}
         <button
-          className="btn btn-light"
+          className="btn btn-light mx-2"
           onClick={() => navigate(`/presenties/${subjectId}/${sectionId}`, { state: { subjectInfo } })}
         >
           Mark Attendance
         </button>
+        </div>
       </nav>
 
       {error && <div className="alert alert-danger mt-3">{error}</div>}

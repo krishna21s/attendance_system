@@ -8,6 +8,8 @@ import FacultyDashboard from './Pages/faculty_dashboard/FacultyDashboard';
 import FacultyRegister from './Pages/facultyRegister/FacultyRegister';
 import StudentAttendance from './Pages/StudentAttendance/StudentAttendance';
 import Student_Reg from './Pages/Registrations/Student_Reg';
+import Admin from './Pages/Admin/Admin';
+import SendMail from './Pages/Mails/Mail';
 
 function App() {
 
@@ -20,6 +22,8 @@ function App() {
           <Route path="/faculty-dashboard" element={<FacultyDashboard />} />
           <Route path="/facultyRegister" element={<FacultyRegister />} />
           <Route path="/studentRegister" element={<Student_Reg />} />
+          <Route path="/admin" element={<Admin/>} />
+          <Route path="/mail" element={<SendMail/>} />
           <Route path="/attendance/:subjectId/:sectionId" element={<StudentAttendance />} />
 
         </Routes>
